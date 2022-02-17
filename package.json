@@ -25,5 +25,12 @@
     "build:debug": "napi build --platform",
     "prepublishOnly": "napi prepublish -t npm",
     "version": "napi version"
+  },
+  "optionalDependencies": {
+    "dolphin-utilities-rust-win32-x64-msvc": "1.0.0",
+    "dolphin-utilities-rust-darwin-x64": "1.0.0",
+    "dolphin-utilities-rust-linux-x64-gnu": "1.0.0",
+    "dolphin-utilities-rust-darwin-arm64": "1.0.0",
+    "dolphin-utilities-rust-win32-ia32-msvc": "1.0.0"
   }
 }
