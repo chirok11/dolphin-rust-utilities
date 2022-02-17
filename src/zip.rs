@@ -15,6 +15,9 @@ pub enum ZipError<'a> {
 
     #[error("unable to read file {0}")]
     FileReadError(&'a PathBuf),
+
+    #[error("global error occured")]
+    GlobError(),
 }
 
 impl<'a> From<ZipError<'a>> for napi::Error {
@@ -53,7 +56,7 @@ fn archivate_folder(output_file: String, input_dir: String, file_list: Vec<Strin
                             return Err(ZipError::WriteError(path).into())
                         };
                     },
-                    Err(e) => { error!("error: {}", e) }
+                    Err(e) => { error!("error: {}", e); return Err(ZipError::GlobError().into()) }
                 }
             }
         } else {
