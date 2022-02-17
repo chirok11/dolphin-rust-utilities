@@ -5,4 +5,5 @@
 
 export function proxyCheckHttp(ip: string, port: number, username?: string | undefined | null, password?: string | undefined | null): Promise<string>
 export function proxyCheckSocks5(ip: string, port: number, username?: string | undefined | null, password?: string | undefined | null): Promise<string>
+export function archivateFolder(outputFile: string, inputDir: string, fileList: Array<string>): boolean
 export function loggerInit(): void

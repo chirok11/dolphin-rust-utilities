@@ -7,6 +7,10 @@ extern crate napi_derive;
 extern crate log;
 
 mod proxy;
+mod zip;
+
+#[cfg(target_os = "windows")]
+mod addon_windows;
 
 #[napi]
 fn logger_init() {

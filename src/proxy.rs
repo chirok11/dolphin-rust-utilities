@@ -27,7 +27,7 @@ async fn proxy_check_http(
   let reader = BufReader::new(stream);
   let result = read_stream(reader).await;
 
-  return match result {
+  match result {
     Some(body) => Ok(body),
     None => Err(napi::Error::new(napi::Status::GenericFailure, "Unable to read response".to_string()))
   }
@@ -164,9 +164,9 @@ async fn read_stream(mut buffer: BufReader<TcpStream>) -> Option<String> {
   debug!("{:?}", body);
 
   if chunked && body.len() > 1 {
-    return Some(body[1].to_string());
+    Some(body[1].to_string())
   } else if length.is_some() {
-    return Some(body[0].to_string());
+    Some(body[0].to_string())
   } else {
     None
   }

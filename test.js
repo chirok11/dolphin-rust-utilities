@@ -1,11 +1,14 @@
 const api = require('./');
+const path = require('path');
 
 (async() => {
     api.loggerInit();
+    let res = api.archivateFolder('archive.tar', __dirname, ['package.json', 'npm/*/package.json']);
+    console.info(res);
     //let res = await api.proxyCheckHttp('185.149.40.163', 11361, 'DolphinSupportOnly', 'ges5oSXdsE6i7CWt');
     //let res = await api.proxyCheckSocks5('194.183.168.4', 14521, 'user3021', 'keeT8xei');
-    let res = await api.proxyCheckHttp('77.77.151.71', 34567, 'dmitri', '1234dmitri5678')
-    console.info(res);
+    //let res = await api.proxyCheckHttp('77.77.151.71', 34567, 'dmitri', '1234dmitri5678')
+    //console.info(res);
     //let res = await api.proxyCheckHttp('proxy.packetstream.io', 31112, 'chirok11', 'HHBABE7ZJtikFBpN_country-Finland_session-0bDeQNkT');
     //console.info(res);
 
