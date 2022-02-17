@@ -236,9 +236,10 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { proxyCheckHttp, proxyCheckSocks5, archivateFolder, loggerInit } = nativeBinding
+const { proxyCheckHttp, proxyCheckSocks5, archivateFolder, setForegroundByPid, loggerInit } = nativeBinding
 
 module.exports.proxyCheckHttp = proxyCheckHttp
 module.exports.proxyCheckSocks5 = proxyCheckSocks5
 module.exports.archivateFolder = archivateFolder
+module.exports.setForegroundByPid = setForegroundByPid
 module.exports.loggerInit = loggerInit

@@ -52,7 +52,7 @@ fn archivate_folder(output_file: String, input_dir: String, file_list: Vec<Strin
                         let data = get_bytes_by_filename(&path);
                         if data.is_err() { return Err(ZipError::FileReadError(&path).into()); }
 
-                        if zip_writer.write_all(get_bytes_by_filename(&path).unwrap().as_slice()).is_err() {
+                        if zip_writer.write_all(get_bytes_by_filename(&path)?.as_slice()).is_err() {
                             return Err(ZipError::WriteError(path).into())
                         };
                     },
@@ -62,7 +62,7 @@ fn archivate_folder(output_file: String, input_dir: String, file_list: Vec<Strin
         } else {
             if !input_dir.join(&file).is_file() { continue; }
             zip_writer.start_file(&file, options).unwrap();
-            zip_writer.write_all(get_bytes_by_filename(&input_dir.join(&file).to_path_buf()).unwrap().as_slice()).unwrap();
+            zip_writer.write_all(get_bytes_by_filename(&input_dir.join(&file))?.as_slice())?;
         }
     }
 

@@ -1,4 +1,5 @@
 node_modules
 target
-dolphin-utilities-rust.linux-x64-gnu.node
+/*.node
+/*.d.ts
 archive.tar
