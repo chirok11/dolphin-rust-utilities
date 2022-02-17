@@ -16,6 +16,6 @@ mod addon_windows;
 mod addon_darwin;
 
 #[napi]
-fn logger_init() {
+fn init_logging() {
   pretty_env_logger::init();
 }
