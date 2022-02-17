@@ -41,7 +41,7 @@ fn archivate_folder(output_file: String, input_dir: String, file_list: Vec<Strin
                         let pathn = input_dir.join(&path);
                         debug!("writing {:?}", path);
                         if pathn.is_dir() { continue; }
-                        let m = zip_writer.start_file(path.as_os_str().to_string_lossy(), options);
+                        let m = zip_writer.start_file(path_to_string(&path), options);
                         if m.is_err() {
                             return Err(ZipError::WriteError(path).into())
                         }
@@ -66,6 +66,19 @@ fn archivate_folder(output_file: String, input_dir: String, file_list: Vec<Strin
     zip_writer.finish().unwrap();
 
     Ok(true)
+}
+
+fn path_to_string(path: &std::path::Path) -> String {
+    let mut path_str = String::new();
+    for component in path.components() {
+        if let std::path::Component::Normal(os_str) = component {
+            if !path_str.is_empty() {
+                path_str.push('/');
+            }
+            path_str.push_str(&*os_str.to_string_lossy());
+        }
+    }
+    path_str
 }
 
 fn get_bytes_by_filename(path: &Path) -> Result<Vec<u8>> {
