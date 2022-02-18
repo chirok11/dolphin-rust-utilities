@@ -7,4 +7,5 @@ export function proxyCheckHttp(ip: string, port: number, username?: string | und
 export function proxyCheckSocks5(ip: string, port: number, username?: string | undefined | null, password?: string | undefined | null): Promise<string>
 export function archivateFolder(outputFile: string, inputDir: string, fileList: Array<string>): boolean
 export function setForegroundByPid(pid: number): boolean
-export function loggerInit(): void
+export function killProcessByPid(pid: number): number
+export function rustLoggerInit(): void

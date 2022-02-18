@@ -142,12 +142,12 @@ jobs:
         run: |
           if git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+$";
           then
-            echo "//npm.pkg.jetbrains.space/zorrodev/p/development/npm/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-            npm publish --registry https://npm.pkg.jetbrains.space/zorrodev/p/development/npm/ --access public
+            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+            npm publish --access public
           elif git log -1 --pretty=%B | grep "^[0-9]\+\.[0-9]\+\.[0-9]\+";
           then
-            echo "//npm.pkg.jetbrains.space/zorrodev/p/development/npm/:_authToken=$NPM_TOKEN" >> ~/.npmrc
-            npm publish --registry https://npm.pkg.jetbrains.space/zorrodev/p/development/npm/ --tag next --access public
+            echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc
+            npm publish --tag next --access public
           else
             echo "Not a release, skipping publish"
           fi

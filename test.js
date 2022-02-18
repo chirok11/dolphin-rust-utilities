@@ -2,6 +2,6 @@ const api = require('./');
 const path = require('path');
 
 (async() => {
-    api.loggerInit();
-    api.setForegroundByPid(54679)
+    api.rustLoggerInit();
+    api.killProcessByPid(52877);
 })();
