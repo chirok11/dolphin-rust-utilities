@@ -1,6 +1,6 @@
 {
   "name": "dolphin-utilities-rust",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "main": "index.js",
   "types": "index.d.ts",
   "napi": {
@@ -17,7 +17,8 @@
     "dolphin-utilities-rust.darwin-x64.node",
     "dolphin-utilities-rust.linux-x64-gnu.node",
     "dolphin-utilities-rust.win32-ia32-msvc.node",
-    "dolphin-utilities-rust.win32-x64-msvc.node"
+    "dolphin-utilities-rust.win32-x64-msvc.node",
+    "index.d.ts"
   ],
   "license": "MIT",
   "devDependencies": {

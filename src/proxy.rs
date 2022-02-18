@@ -115,7 +115,7 @@ async fn read_stream(mut buffer: BufReader<TcpStream>) -> Option<String> {
   loop {
     let ok = buffer.read_line(&mut data).await;
     match ok {
-      Ok(n) if n == 2 => break,
+      Ok(n) if n == 2 || n == 0 => break,
       Ok(n) => { debug!("read {}", &n) },
       Err(e) => { error!("{:#?}", e) }
     }
