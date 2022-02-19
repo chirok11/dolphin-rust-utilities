@@ -1,13 +1,14 @@
 [package]
 edition = "2021"
 name = "dolphin-utilities-rust"
-version = "1.0.4"
+version = "1.0.5"
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
 # Default enable napi4 feature, see https://nodejs.org/api/n-api.html#node-api-version-matrix
+futures = "0.3.21"
 tokio = { version = "1.16.1", features = ["full"] }
 napi = { version = "2.1.0", default-features = false, features = ["napi4", "tokio_rt"] }
 reqwest = { version = "0.11.9" }

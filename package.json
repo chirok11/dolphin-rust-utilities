@@ -1,6 +1,6 @@
 {
   "name": "dolphin-utilities-rust",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "main": "index.js",
   "types": "index.d.ts",
   "napi": {
@@ -22,7 +22,8 @@
   ],
   "license": "MIT",
   "devDependencies": {
-    "@napi-rs/cli": "^2.4.4"
+    "@napi-rs/cli": "^2.4.4",
+    "@types/node": "16"
   },
   "engines": {
     "node": ">= 10"
