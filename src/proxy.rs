@@ -72,10 +72,10 @@ async fn proxy_check_socks5(
     wl.extend(password.as_bytes());
     let r = stream.write(&wl).await?;
     assert_eq!(r, wl.len());
+    let _ = stream.read(&mut buf).await?;
   }
-  let _ = stream.read(&mut buf).await?;
 
-  if buf[0] == 0x01 && buf[1] == 0x00 {
+  if (buf[0] == 0x01 || buf[0] == 0x05) && buf[1] == 0x00 {
     debug!("auth success");
     let mut wl: Vec<u8> = Vec::new();
     wl.extend(&[5, 1, 0, 1]);

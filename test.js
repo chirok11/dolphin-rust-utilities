@@ -3,5 +3,5 @@ const path = require('path');
 
 (async() => {
     api.rustLoggerInit();
-    api.killProcessByPid(52877);
+    console.info(result);
 })();
