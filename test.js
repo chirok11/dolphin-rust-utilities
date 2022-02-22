@@ -3,4 +3,5 @@ const path = require('path');
 
 (async() => {
     api.rustLoggerInit();
+    
 })();
