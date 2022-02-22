@@ -27,48 +27,53 @@ impl<'a> From<ZipError<'a>> for napi::Error {
 }
 
 #[napi]
-fn archivate_folder(output_file: String, input_dir: String, file_list: Vec<String>) -> Result<bool> {
-    let output_path = Path::new(&output_file);
-    let input_dir = Path::new(&input_dir);
+async fn archivate_folder(output_file: String, input_dir: String, file_list: Vec<String>) -> Result<bool> {
+    let handle = tokio::task::spawn(async move {
+        let output_path = Path::new(&output_file);
+        let input_dir = Path::new(&input_dir);
 
-    let file = File::create(&output_path)?;
-    let mut zip_writer = ZipWriter::new(file);
-    let options = FileOptions::default()
-        .compression_method(CompressionMethod::Deflated);
+        let file = File::create(&output_path)?;
+        let mut zip_writer = ZipWriter::new(file);
+        let options = FileOptions::default()
+            .compression_method(CompressionMethod::Deflated);
 
-    for file in file_list {
-        if file.contains('*') {
-            for entry in glob(file.as_str()).unwrap() {
-                match entry {
-                    Ok(path) => {
-                        let pathn = input_dir.join(&path);
-                        debug!("writing {:?}", path);
-                        if pathn.is_dir() { continue; }
-                        let m = zip_writer.start_file(path_to_string(&path), options);
-                        if m.is_err() {
-                            return Err(ZipError::WriteError(path).into())
-                        }
+        for file in file_list {
+            if file.contains('*') {
+                for entry in glob(file.as_str()).unwrap() {
+                    match entry {
+                        Ok(path) => {
+                            let pathn = input_dir.join(&path);
+                            debug!("writing {:?}", path);
+                            if pathn.is_dir() { continue; }
+                            let m = zip_writer.start_file(path_to_string(&path), options);
+                            if m.is_err() {
+                                return Err(ZipError::WriteError(path).into())
+                            }
 
-                        let data = get_bytes_by_filename(&path);
-                        if data.is_err() { return Err(ZipError::FileReadError(&path).into()); }
+                            let data = get_bytes_by_filename(&path);
+                            if data.is_err() { return Err(ZipError::FileReadError(&path).into()); }
 
-                        if zip_writer.write_all(get_bytes_by_filename(&path)?.as_slice()).is_err() {
-                            return Err(ZipError::WriteError(path).into())
-                        };
-                    },
-                    Err(e) => { error!("error: {}", e); return Err(ZipError::GlobError().into()) }
+                            if zip_writer.write_all(get_bytes_by_filename(&path)?.as_slice()).is_err() {
+                                return Err(ZipError::WriteError(path).into())
+                            };
+                        },
+                        Err(e) => { error!("error: {}", e); return Err(ZipError::GlobError().into()) }
+                    }
                 }
+            } else {
+                if !input_dir.join(&file).is_file() { continue; }
+                zip_writer.start_file(&file, options).unwrap();
+                zip_writer.write_all(get_bytes_by_filename(&input_dir.join(&file))?.as_slice())?;
             }
-        } else {
-            if !input_dir.join(&file).is_file() { continue; }
-            zip_writer.start_file(&file, options).unwrap();
-            zip_writer.write_all(get_bytes_by_filename(&input_dir.join(&file))?.as_slice())?;
         }
-    }
 
     zip_writer.finish().unwrap();
-
     Ok(true)
+    }).await.map_err(|e| {
+        napi::Error::new(GenericFailure, format!("{}", e))
+    })?;
+
+    handle
 }
 
 fn path_to_string(path: &std::path::Path) -> String {
