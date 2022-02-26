@@ -39,22 +39,29 @@ async fn archivate_folder(output_file: String, input_dir: String, file_list: Vec
 
         for file in file_list {
             if file.contains('*') {
-                for entry in glob(file.as_str()).unwrap() {
+                for entry in glob(input_dir.join(file).to_str().unwrap()).unwrap() {
                     match entry {
-                        Ok(path) => {
-                            let pathn = input_dir.join(&path);
-                            debug!("writing {:?}", path);
-                            if pathn.is_dir() { continue; }
-                            let m = zip_writer.start_file(path_to_string(&path), options);
+                        Ok(pathb) => {
+                            let pathn = pathb.strip_prefix(input_dir).map_err(
+                                |e| napi::Error::new(GenericFailure, format!("Error: {:?}", &e))
+                            )?;
+                            debug!("adding: {:?}", pathn);
+                            if pathb.is_dir() {
+                                zip_writer.add_directory(path_to_string(pathn), options).map_err(
+                                    |e| napi::Error::new(GenericFailure, format!("Error: {:?}", &e))
+                                )?;
+                                continue;
+                            }
+                            let m = zip_writer.start_file(path_to_string(pathn), options);
                             if m.is_err() {
-                                return Err(ZipError::WriteError(path).into())
+                                return Err(ZipError::WriteError(pathn.to_path_buf()).into())
                             }
 
-                            let data = get_bytes_by_filename(&path);
-                            if data.is_err() { return Err(ZipError::FileReadError(&path).into()); }
+                            let data = get_bytes_by_filename(&pathb);
+                            if data.is_err() { return Err(ZipError::FileReadError(&pathn.to_path_buf()).into()); }
 
-                            if zip_writer.write_all(get_bytes_by_filename(&path)?.as_slice()).is_err() {
-                                return Err(ZipError::WriteError(path).into())
+                            if zip_writer.write_all(get_bytes_by_filename(&pathb)?.as_slice()).is_err() {
+                                return Err(ZipError::WriteError(pathn.to_path_buf()).into())
                             };
                         },
                         Err(e) => { error!("error: {}", e); return Err(ZipError::GlobError().into()) }
@@ -97,4 +104,11 @@ fn get_bytes_by_filename(path: &Path) -> Result<Vec<u8>> {
     file.read_exact(&mut buffer)?;
 
     Ok(buffer)
+}
+
+#[test]
+fn test_glob() {
+    for entry in glob("data_dir/Default/Extensions/**").unwrap() {
+        println!("{:?}", entry);
+    }
 }
