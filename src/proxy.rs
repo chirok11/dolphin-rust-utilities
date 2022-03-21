@@ -164,8 +164,13 @@ async fn read_stream(mut buffer: BufReader<TcpStream>) -> Option<String> {
   debug!("body len: {}", body.len());
   debug!("{:?}", body);
 
+  let body = body.iter().map(|v| match v.starts_with('\n') && v.len() < 5 {
+    true => "",
+    false => v
+  }).collect::<Vec<&str>>();
+
   if chunked && body.len() > 1 {
-    Some(body[1].to_string())
+    Some(body[1..].join(""))
   } else if length.is_some() {
     Some(body[0].to_string())
   } else {
