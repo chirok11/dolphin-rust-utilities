@@ -78,8 +78,9 @@ async fn proxy_check_socks5(
   if (buf[0] == 0x01 || buf[0] == 0x05) && buf[1] == 0x00 {
     debug!("auth success");
     let mut wl: Vec<u8> = Vec::new();
-    wl.extend(&[5, 1, 0, 1]);
-    wl.extend(&[0x05, 0x16, 0xd0, 0x87, 0x00, 0x50]);
+    wl.extend(&[0x05, 0x01, 0x00, 0x03, 0x06]);
+    wl.extend("vo4.co".as_bytes());
+    wl.extend(&[0x00, 0x50]);
     debug!("requesting endpoint");
     let r = stream.write(&wl).await?;
     assert_eq!(r, wl.len());
@@ -89,7 +90,7 @@ async fn proxy_check_socks5(
 
   let _ = stream.read(&mut buf).await?;
 
-  if buf[3] == 0x01 {
+  if buf[1] == 0x00 {
     debug!("connection ok; write request");
     let req =
         "GET /ip-info HTTP/1.1\r\nHost: vo4.co\r\nUser-Agent: DolphinProxy/1.0\r\n\r\n".as_bytes();

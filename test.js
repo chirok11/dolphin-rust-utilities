@@ -4,8 +4,7 @@ const path = require('path');
 (async() => {
     api.rustLoggerInit();
     console.info(path.join(__dirname, 'data_dir'));
-    api.archivateFolder('browser.zip', path.join(__dirname, 'data_dir'), 
-    [
-        'Default/Extensions/**/*'
-    ]);
+
+    let re = await api.proxyCheckSocks5('45.145.57.215', 10519, 'nfxLjc', 'HpmpeN');
+    console.info(re);
 })();
