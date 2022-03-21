@@ -5,6 +5,7 @@ const path = require('path');
     api.rustLoggerInit();
     console.info(path.join(__dirname, 'data_dir'));
 
-    let re = await api.proxyCheckSocks5('45.145.57.215', 10519, 'nfxLjc', 'HpmpeN');
-    console.info(re);
+    let re = await api.proxyCheckHttp('209.14.2.75', 9654, '11040', 'a93099efeab8');
+    console.debug(re.replaceAll("\n", ''));
+    console.info(JSON.parse(re));
 })();
