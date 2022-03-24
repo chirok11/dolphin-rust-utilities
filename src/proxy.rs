@@ -42,6 +42,7 @@ async fn proxy_check_socks5(
   let client = reqwest::Client::builder().connect_timeout(Duration::from_secs(30)).proxy(proxy).build().unwrap();
   let request = client.get("http://vo4.co/ip-info").build().unwrap();
   let result = client.execute(request).await;
+  
   match result {
     Ok(response) => Ok(response.text().await.unwrap()),
     Err(e) => Err(napi::Error::new(napi::Status::GenericFailure, format!("{}", &e)))
