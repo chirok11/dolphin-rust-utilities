@@ -6,7 +6,7 @@ use winapi::um::winuser::{EnumWindows, GetWindowThreadProcessId, SetForegroundWi
 #[cfg(target_os = "windows")]
 unsafe extern "system" fn enum_wins(hwnd: *mut winapi::shared::windef::HWND__, l: LPARAM) -> i32 {
     let z = window_thread_process_id(hwnd);
-    if z.0 == l.try_into().unwrap() {
+    if z.0 == l as u32 {
         SetForegroundWindow(hwnd);
         ShowWindow(hwnd, 1);
         0
