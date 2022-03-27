@@ -236,11 +236,11 @@ if (!nativeBinding) {
   throw new Error(`Failed to load native binding`)
 }
 
-const { proxyCheckHttp, proxyCheckSocks5, archivateFolder, setForegroundByPid, killProcessByPid, rustLoggerInit } = nativeBinding
+const { HttpFileDownloader, proxyCheckHttp, proxyCheckSocks5, archivateFolder, killProcessByPid, rustLoggerInit } = nativeBinding
 
+module.exports.HttpFileDownloader = HttpFileDownloader
 module.exports.proxyCheckHttp = proxyCheckHttp
 module.exports.proxyCheckSocks5 = proxyCheckSocks5
 module.exports.archivateFolder = archivateFolder
-module.exports.setForegroundByPid = setForegroundByPid
 module.exports.killProcessByPid = killProcessByPid
 module.exports.rustLoggerInit = rustLoggerInit

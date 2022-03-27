@@ -208,12 +208,14 @@ checksum = "bd0c93bb4b0c6d9b77f4435b0ae98c24d17f1c45b2ff844c6151a07256ca923b"
 
 [[package]]
 name = "dolphin-utilities-rust"
-version = "1.1.2"
+version = "1.1.4"
 dependencies = [
  "base64",
+ "bytes",
  "cocoa",
  "dispatch",
  "futures",
+ "futures-util",
  "glob",
  "kernel32-sys",
  "libc",
@@ -224,6 +226,7 @@ dependencies = [
  "objc",
  "pretty_env_logger",
  "reqwest",
+ "serde",
  "thiserror",
  "tokio",
  "winapi 0.3.9",
@@ -442,8 +445,7 @@ dependencies = [
 [[package]]
 name = "http"
 version = "0.2.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31f4c6746584866f0feabcc69893c5b51beef3831656a968ed7ae254cdc4fd03"
+source = "git+https://github.com/chirok11/http#7bd1269a730d009ddf81d8f1c91bda6b9b3b2510"
 dependencies = [
  "bytes",
  "fnv",
@@ -678,6 +680,8 @@ dependencies = [
  "ctor",
  "lazy_static",
  "napi-sys",
+ "serde",
+ "serde_json",
  "tokio",
  "windows",
 ]
@@ -954,6 +958,7 @@ dependencies = [
  "tokio",
  "tokio-native-tls",
  "tokio-socks",
+ "tokio-util",
  "url",
  "wasm-bindgen",
  "wasm-bindgen-futures",
@@ -1011,6 +1016,20 @@ name = "serde"
 version = "1.0.136"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ce31e24b01e1e524df96f1c2fdd054405f8d7376249a5110886fb4b658484789"
+dependencies = [
+ "serde_derive",
+]
+
+[[package]]
+name = "serde_derive"
+version = "1.0.136"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "08597e7152fcd306f41838ed3e37be9eaeed2b61c42e2117266a554fab4662f9"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
 
 [[package]]
 name = "serde_json"

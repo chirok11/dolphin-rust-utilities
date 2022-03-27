@@ -6,6 +6,7 @@ extern crate napi_derive;
 #[macro_use]
 extern crate log;
 
+mod http;
 mod proxy;
 mod zip;
 
