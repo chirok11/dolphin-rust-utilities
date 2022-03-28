@@ -139,7 +139,7 @@ impl HttpFileDownloader {
     };
 
     let checksum = if (file_length as f64 * 0.01) as u64 > 65535 {
-      65553
+      65535
     } else {
       (file_length as f64 * 0.01) as u64
     };
@@ -158,6 +158,11 @@ impl HttpFileDownloader {
     .map_err(|e| napi::Error::new(GenericFailure, format!("{}", e)))?;
 
     let response = client.execute(request).await.napify()?;
+    info!("[response] status: {}", response.status());
+    info!("[file] file length: {}", file_length);
+    info!("[first req] content-length: {:?}", content_length);
+    info!("[response] content-length: {:?}", response.content_length());
+    info!("[response] ");
     let mut stream = response.bytes_stream();
     let mut file = OpenOptions::new()
       .create(true)
