@@ -125,6 +125,12 @@ impl HttpFileDownloader {
             ecode: ECode::ContentLengthMatchFileSize as u32,
             message: "File size equals content-length",
           });
+        } else if file_length > cl {
+          return Ok(HttpFileDownloaderResponse {
+            status: false,
+            ecode: ECode::ChecksumVerificationFailed as u32,
+            message: "Unable to verify checksum. File on server is changed",
+          });
         } else {
           cl
         }
@@ -162,7 +168,6 @@ impl HttpFileDownloader {
     info!("[file] file length: {}", file_length);
     info!("[first req] content-length: {:?}", content_length);
     info!("[response] content-length: {:?}", response.content_length());
-    info!("[response] ");
     let mut stream = response.bytes_stream();
     let mut file = OpenOptions::new()
       .create(true)
