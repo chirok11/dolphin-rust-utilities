@@ -15,6 +15,7 @@ async fn proxy_check_http(
     .connect_timeout(Duration::from_secs(30))
     .proxy(proxy)
     .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.82 Safari/537.36")
+    .http1_title_case_headers()
     .build()
     .unwrap();
 
@@ -58,6 +59,7 @@ async fn proxy_check_socks5(
   let client = reqwest::Client::builder()
     .connect_timeout(Duration::from_secs(30))
     .proxy(proxy)
+    .http1_title_case_headers()
     .build()
     .unwrap();
   let request = client.get("http://vo4.co/ip-info").build().unwrap();

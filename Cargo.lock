@@ -208,7 +208,7 @@ checksum = "bd0c93bb4b0c6d9b77f4435b0ae98c24d17f1c45b2ff844c6151a07256ca923b"
 
 [[package]]
 name = "dolphin-utilities-rust"
-version = "1.1.6"
+version = "1.1.7"
 dependencies = [
  "base64",
  "bytes",
@@ -445,7 +445,8 @@ dependencies = [
 [[package]]
 name = "http"
 version = "0.2.6"
-source = "git+https://github.com/chirok11/http#7bd1269a730d009ddf81d8f1c91bda6b9b3b2510"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "31f4c6746584866f0feabcc69893c5b51beef3831656a968ed7ae254cdc4fd03"
 dependencies = [
  "bytes",
  "fnv",

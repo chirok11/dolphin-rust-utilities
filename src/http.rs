@@ -6,6 +6,7 @@ use napi::threadsafe_function::{
 use napi::JsFunction;
 use napi::Status::GenericFailure;
 use serde::{Deserialize, Serialize};
+use std::cmp::Ordering;
 use std::fs;
 use std::io::SeekFrom;
 use std::path::PathBuf;
@@ -118,23 +119,23 @@ impl HttpFileDownloader {
       .map(|v| v == "bytes")
       .unwrap();
     let content_length = match first_request_response.content_length() {
-      Some(cl) => {
-        if file_length == cl {
+      Some(cl) => match file_length.cmp(&cl) {
+        Ordering::Less => cl,
+        Ordering::Equal => {
           return Ok(HttpFileDownloaderResponse {
             status: true,
             ecode: ECode::ContentLengthMatchFileSize as u32,
             message: "File size equals content-length",
-          });
-        } else if file_length > cl {
+          })
+        }
+        Ordering::Greater => {
           return Ok(HttpFileDownloaderResponse {
             status: false,
             ecode: ECode::ChecksumVerificationFailed as u32,
             message: "Unable to verify checksum. File on server is changed",
-          });
-        } else {
-          cl
+          })
         }
-      }
+      },
       None => {
         return Ok(HttpFileDownloaderResponse {
           status: false,

@@ -1,13 +1,12 @@
 [package]
 edition = "2021"
 name = "dolphin-utilities-rust"
-version = "1.1.6"
+version = "1.1.7"
 
 [lib]
 crate-type = ["cdylib"]
 
 [dependencies]
-# Default enable napi4 feature, see https://nodejs.org/api/n-api.html#node-api-version-matrix
 futures = "0.3.21"
 tokio = { version = "1.16.1", features = ["full"] }
 napi = { version = "2.1.0", default-features = false, features = ["napi4", "napi8", "tokio_rt", "serde-json"] }
@@ -22,9 +21,6 @@ zip = { version = "0.5.13", features = ["deflate"] }
 glob = "0.3.0"
 futures-util = "0.3.21"
 bytes = "1.1.0"
-
-[patch.crates-io]
-http = { git = "https://github.com/chirok11/http" }
 
 [target.'cfg(not(target_os = "windows"))'.dependencies]
 libc = "0.2.118"
