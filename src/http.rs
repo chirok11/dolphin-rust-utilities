@@ -129,7 +129,9 @@ impl HttpFileDownloader {
       .build()
       .map_err(|e| napi::Error::new(GenericFailure, format!("{}", e)))?;
     debug!("[http] send GET request after we start");
-    let first_request_response = client.execute(first_request).await.napify()?;
+    let first_request_response = client.execute(first_request).await.map_err(|e| {
+      napi::Error::new(GenericFailure, format!("unable to execute request: {}", &e))
+    })?;
     debug!(
       "[http] first request response: {}",
       first_request_response.status()
