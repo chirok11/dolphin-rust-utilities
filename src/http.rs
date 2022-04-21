@@ -110,6 +110,19 @@ impl HttpFileDownloader {
       }
     };
 
+    debug!("[http] reqwest get httpbin.org/ip");
+    let zero_request = client
+      .get("http://httpbin.org/ip")
+      .build()
+      .map_err(|e| napi::Error::new(GenericFailure, format!("unable to build request: {}", &e)))?;
+    let zero_request_response = client.execute(zero_request).await.map_err(|e| {
+      napi::Error::new(GenericFailure, format!("unable to execute request: {}", &e))
+    })?;
+    debug!(
+      "[http] reqwest get httpbin.org/ip: {}",
+      zero_request_response.status()
+    );
+
     debug!("[http] send GET request before we start");
     let first_request = client
       .get(url.clone())
