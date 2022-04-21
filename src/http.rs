@@ -68,6 +68,7 @@ pub struct HttpFileDownloaderResponse {
 impl HttpFileDownloader {
   #[napi(constructor)]
   pub fn new(emitter: Option<JsFunction>) -> Self {
+    debug!("new: {}", emitter.is_some());
     if let Some(func) = emitter {
       let tsfn: ThreadsafeFunction<_, ErrorStrategy::Fatal> = func
         .create_threadsafe_function(0, |ctx: ThreadSafeCallContext<DownloadProgress>| {
@@ -91,12 +92,14 @@ impl HttpFileDownloader {
     url: String,
     filename: String,
   ) -> napi::Result<HttpFileDownloaderResponse> {
+    debug!("download_file: {}", url);
     let client = reqwest::ClientBuilder::new()
       .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.82 Safari/537.36")
       .build()
       .map_err(|e| napi::Error::new(GenericFailure, format!("unable to build client: {}", &e)))?;
 
     let path = PathBuf::from(filename);
+    debug!("download_file: {}", path.display());
     //@ Get metadata for file if available.
     let file_length = match fs::metadata(&path) {
       Ok(metadata) => metadata.len(),
@@ -112,12 +115,18 @@ impl HttpFileDownloader {
       .get(url.clone())
       .build()
       .map_err(|e| napi::Error::new(GenericFailure, format!("{}", e)))?;
+    debug!("[http] send GET request after we start");
     let first_request_response = client.execute(first_request).await.napify()?;
+    debug!(
+      "[http] first request response: {}",
+      first_request_response.status()
+    );
     let bytes_supported = first_request_response
       .headers()
       .get("Accept-Ranges")
       .map(|v| v == "bytes")
       .unwrap();
+    debug!("[http] bytes_supported: {}", bytes_supported);
     let content_length = match first_request_response.content_length() {
       Some(cl) => match file_length.cmp(&cl) {
         Ordering::Less => cl,
@@ -151,7 +160,10 @@ impl HttpFileDownloader {
       (file_length as f64 * 0.01) as u64
     };
 
+    debug!("[http] checksum: {}", checksum);
+
     let request = if bytes_supported {
+      debug!("[http] bytes_supported: {}", bytes_supported);
       client
         .get(url.clone())
         .header(
@@ -160,10 +172,12 @@ impl HttpFileDownloader {
         )
         .build()
     } else {
+      debug!("[http] bytes_supported: {}", bytes_supported);
       client.get(url.clone()).build()
     }
     .map_err(|e| napi::Error::new(GenericFailure, format!("{}", e)))?;
 
+    debug!("[http] send GET request #2");
     let response = client.execute(request).await.napify()?;
     info!("[response] status: {}", response.status());
     info!("[file] file length: {}", file_length);
