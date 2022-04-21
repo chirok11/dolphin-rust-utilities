@@ -20,13 +20,16 @@ async fn proxy_check_http(
     .unwrap();
 
   let request = match username {
-    Some(username) => client.get("http://proxy.lol/ip-info").header(
-      HeaderName::from_bytes(b"Proxy-Authorization").unwrap(),
-      format!(
-        "Basic {}",
-        base64::encode(&format!("{}:{}", username, password.unwrap()))
+    Some(username) => client
+      .get("http://proxy.lol/ip-info")
+      .header("Accept", "text/plain")
+      .header(
+        HeaderName::from_bytes(b"Proxy-Authorization").unwrap(),
+        format!(
+          "Basic {}",
+          base64::encode(&format!("{}:{}", username, password.unwrap()))
+        ),
       ),
-    ),
     None => client.get("http://proxy.lol/ip-info"),
   };
 
@@ -50,7 +53,7 @@ async fn proxy_check_socks5(
 ) -> Result<String> {
   debug!("connecting to {}:{}", ip, port);
 
-  let mut proxy = reqwest::Proxy::http(format!("socks5h://{}:{}", ip, port)).unwrap();
+  let mut proxy = reqwest::Proxy::https(format!("socks5h://{}:{}", ip, port)).unwrap();
 
   if let Some(u) = username {
     proxy = proxy.basic_auth(&u, &password.unwrap());
@@ -62,7 +65,7 @@ async fn proxy_check_socks5(
     .http1_title_case_headers()
     .build()
     .unwrap();
-  let request = client.get("http://proxy.lol/ip-info").build().unwrap();
+  let request = client.get("https://proxy.lol/ip-info").build().unwrap();
   let result = client.execute(request).await;
 
   match result {
