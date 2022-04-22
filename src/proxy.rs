@@ -21,7 +21,7 @@ async fn proxy_check_http(
 
   let request = match username {
     Some(username) => client
-      .get("http://proxy.lol/ip-info")
+      .get("http://vo4.co/ip-info")
       .header("Accept", "text/plain")
       .header(
         HeaderName::from_bytes(b"Proxy-Authorization").unwrap(),
@@ -30,7 +30,7 @@ async fn proxy_check_http(
           base64::encode(&format!("{}:{}", username, password.unwrap()))
         ),
       ),
-    None => client.get("http://proxy.lol/ip-info"),
+    None => client.get("http://vo4.co/ip-info"),
   };
 
   let request = request.build().unwrap();
@@ -65,7 +65,7 @@ async fn proxy_check_socks5(
     .http1_title_case_headers()
     .build()
     .unwrap();
-  let request = client.get("http://proxy.lol/ip-info").build().unwrap();
+  let request = client.get("http://vo4.co/ip-info").build().unwrap();
   let result = client.execute(request).await;
 
   match result {
