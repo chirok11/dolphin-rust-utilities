@@ -65,7 +65,7 @@ async fn proxy_check_socks5(
     .http1_title_case_headers()
     .build()
     .unwrap();
-  let request = client.get("https://proxy.lol/ip-info").build().unwrap();
+  let request = client.get("http://proxy.lol/ip-info").build().unwrap();
   let result = client.execute(request).await;
 
   match result {
