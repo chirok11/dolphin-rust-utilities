@@ -53,7 +53,7 @@ async fn proxy_check_socks5(
 ) -> Result<String> {
   debug!("connecting to {}:{}", ip, port);
 
-  let mut proxy = reqwest::Proxy::https(format!("socks5h://{}:{}", ip, port)).unwrap();
+  let mut proxy = reqwest::Proxy::http(format!("socks5h://{}:{}", ip, port)).unwrap();
 
   if let Some(u) = username {
     proxy = proxy.basic_auth(&u, &password.unwrap());
