@@ -1,5 +1,6 @@
 const api = require('./');
 const path = require('path');
+const { EventEmitter } = require('events');
 
 (async() => {
     api.rustLoggerInit();
@@ -7,7 +8,11 @@ const path = require('path');
 
     // 209.14.2.75:6000:11060:2ae704094cf7
     // let re = await api.proxyCheckHttp('209.14.2.75', 6000, '11060', '2ae704094cf7');
-    let re = await api.proxyCheckSocks5('194.233.169.229', 25704, 'proxyes5705', 'od4iqmja');
-    console.debug(re.replaceAll("\n", ''));
-    console.info(JSON.parse(re));
+    const emitter = new EventEmitter();
+    emitter.on('progress', (data) => {
+        console.info(data);
+    });
+    let re = new api.HttpFileDownloader(emitter.emit.bind(emitter));
+    let result = await re.downloadFile('http://91.210.165.92:83/dolphin-anty/anty-browser/releases/download/v83/mac-arm.zip', 'hello-world.zip');
+    console.info(result);
 })();

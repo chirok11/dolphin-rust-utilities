@@ -1,17 +1,21 @@
-use bytes::BytesMut;
-use futures_util::StreamExt;
+use bytes::{Buf, BytesMut};
+use futures_util::{StreamExt, TryStreamExt};
 use napi::threadsafe_function::{
   ErrorStrategy, ThreadSafeCallContext, ThreadsafeFunction, ThreadsafeFunctionCallMode,
 };
+
 use napi::JsFunction;
 use napi::Status::GenericFailure;
+use reqwest::Request;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::fs;
-use std::io::SeekFrom;
+use std::io::{Cursor, Read, SeekFrom};
 use std::path::PathBuf;
+use std::time::Duration;
 use tokio::fs::OpenOptions;
-use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
+use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt, BufReader, BufWriter, ReadBuf};
+use tokio::time::sleep;
 
 #[napi]
 struct HttpFileDownloader {
@@ -90,46 +94,26 @@ impl HttpFileDownloader {
   pub async fn download_file(
     &mut self,
     url: String,
-    filename: String,
+    file: String,
   ) -> napi::Result<HttpFileDownloaderResponse> {
-    debug!("download_file: {}", url);
-    let client = reqwest::ClientBuilder::new()
-      .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.82 Safari/537.36")
+    let client = reqwest::Client::builder()
+      .user_agent("value")
+      .http1_title_case_headers()
+      .use_rustls_tls()
       .build()
-      .map_err(|e| napi::Error::new(GenericFailure, format!("unable to build client: {}", &e)))?;
-
-    let path = PathBuf::from(filename);
-    debug!("download_file: {}", path.display());
-    //@ Get metadata for file if available.
+      .map_err(|e| napi::Error::from_reason(format!("{}", e)))?;
+    let path = PathBuf::from(file);
     let file_length = match fs::metadata(&path) {
-      Ok(metadata) => metadata.len(),
-      Err(e) => {
-        // maybe file does not exists.
-        info!("[http] ignored error: {}", e);
-        0
-      }
+      Ok(t) => t.len(),
+      Err(_) => 0,
     };
+    let response = client.get(&url).send().await.napify().unwrap();
+    // Check if headers present Accept-Ranges and Content-Length
+    let ranges = response.headers().contains_key("Accept-Ranges");
+    info!("[HTTP] Header Accept-Ranges: {}", ranges);
+    info!("[File] {} file length: {}", path.display(), file_length);
 
-    debug!("[http] send GET request before we start");
-    let first_request = client
-      .get(url.clone())
-      .build()
-      .map_err(|e| napi::Error::new(GenericFailure, format!("{}", e)))?;
-    debug!("[http] send GET request after we start");
-    let first_request_response = client.execute(first_request).await.map_err(|e| {
-      napi::Error::new(GenericFailure, format!("unable to execute request: {}", &e))
-    })?;
-    debug!(
-      "[http] first request response: {}",
-      first_request_response.status()
-    );
-    let bytes_supported = first_request_response
-      .headers()
-      .get("Accept-Ranges")
-      .map(|v| v == "bytes")
-      .unwrap();
-    debug!("[http] bytes_supported: {}", bytes_supported);
-    let content_length = match first_request_response.content_length() {
+    let content_length = match response.content_length() {
       Some(cl) => match file_length.cmp(&cl) {
         Ordering::Less => cl,
         Ordering::Equal => {
@@ -155,140 +139,78 @@ impl HttpFileDownloader {
         })
       }
     };
-
-    let checksum = if (file_length as f64 * 0.01) as u64 > 65535 {
-      65535
-    } else {
-      (file_length as f64 * 0.01) as u64
-    };
-
-    debug!("[http] checksum: {}", checksum);
-
-    let request = if bytes_supported {
-      debug!("[http] bytes_supported: {}", bytes_supported);
-      client
-        .get(url.clone())
-        .header(
-          reqwest::header::RANGE,
-          format!("bytes={}-{}", file_length - checksum, content_length),
-        )
-        .build()
-    } else {
-      debug!("[http] bytes_supported: {}", bytes_supported);
-      client.get(url.clone()).build()
+    info!("[HTTP] Content-Length: {}", content_length);
+    let checksum = if file_length > 65535 { 65535 } else { 0 };
+    let mut request = client.get(&url);
+    if ranges && checksum > 0 {
+      request = request.header(
+        "Range",
+        format!("bytes={}-{}", file_length - checksum, content_length),
+      );
     }
-    .map_err(|e| napi::Error::new(GenericFailure, format!("{}", e)))?;
 
-    debug!("[http] send GET request #2");
-    let response = client.execute(request).await.napify()?;
-    info!("[response] status: {}", response.status());
-    info!("[file] file length: {}", file_length);
-    info!("[first req] content-length: {:?}", content_length);
-    info!("[response] content-length: {:?}", response.content_length());
-    let mut stream = response.bytes_stream();
+    let response = request.send().await.napify()?;
     let mut file = OpenOptions::new()
-      .create(true)
-      .write(true)
       .append(true)
       .read(true)
-      .truncate(!bytes_supported)
+      .write(true)
+      .create(true)
+      .truncate(!ranges)
       .open(&path)
       .await?;
+    let mut checksum_buf = vec![0; 65535];
 
-    // Before we should verify that contents is ok
-    // do that only if checksum > 0
-    if checksum > 0 {
-      file.seek(SeekFrom::Start(file_length - checksum)).await?;
+    let mut stream = response.bytes_stream();
+    // Go to end of file and read last 65535 bytes
+    if ranges && checksum > 0 {
+      debug!("[File] Reading last 65535 bytes");
+      file.seek(SeekFrom::End(-65535)).await?;
+      let n = file.read_exact(&mut checksum_buf).await?;
+      debug!("[File] Read {} bytes", n);
+      debug!("[File] Checksum: {:?}", checksum_buf.len());
 
-      let mut chkbuf = vec![0; checksum as usize];
-      let n = file.read_exact(&mut chkbuf).await?;
-      assert_eq!(checksum as usize, n);
-      info!("read: {}", n);
-
-      let mut b = BytesMut::new();
-      while let Some(item) = stream.next().await {
-        match item {
-          Ok(chunk) => {
-            b.extend_from_slice(&chunk);
-            debug!("read to BytesMut: {}", chunk.len());
-            if b.len() > n {
-              debug!("b.len() > n");
-              break;
-            }
-          }
-          Err(e) => return Err(napi::Error::new(GenericFailure, format!("Error: {}", e))),
+      let mut buffer: Vec<u8> = Vec::new();
+      while let Some(chunk) = stream.next().await {
+        let chunk = chunk.map_err(|e| napi::Error::from_reason(format!("{}", e)))?;
+        let bytes = chunk.as_ref().to_vec();
+        // on_chunk(bytes.len(), content_length);
+        buffer.extend(bytes);
+        if buffer.len() > 65535 && checksum_buf[..] != buffer[..65535] {
+          return Ok(HttpFileDownloaderResponse {
+            status: false,
+            ecode: ECode::ChecksumVerificationFailed as u32,
+            message: "Unable to verify checksum. File on server is changed",
+          });
+        } else if buffer.len() > 65535 && checksum_buf[..] == buffer[..65535] {
+          let n = file.write(&buffer[65535..]).await?;
+          debug!("[File] Written {} bytes", n);
+          break;
         }
       }
-
-      debug!("file_length: {}", file_length);
-      debug!("bytes={}-{}", file_length - checksum, content_length);
-      debug!("b len: {}", b.len());
-      debug!("chkbuf len: {}", chkbuf.len());
-      let v1 = &chkbuf[..];
-      let v3 = b.split_off(checksum as usize);
-      let v2 = &b[..];
-
-      debug!("validating bytes");
-      if checksum > 0 && (v1.len() != v2.len() || v1 != v2) {
-        debug!("[err] bytes mismatch");
-        debug!(
-          "v1({}) != v2({}) = {}",
-          v1.len(),
-          v2.len(),
-          v1.len() != v2.len()
-        );
-        debug!("v1 != v2 = {}", v1 != v2);
-
-        return Ok(HttpFileDownloaderResponse {
-          status: false,
-          ecode: ECode::ChecksumVerificationFailed as u32,
-          message: "Unable to verify checksum. File on server is changed",
-        });
-      }
-
-      // we should write remaining bytes
-      if !v3.is_empty() {
-        debug!("b.len() > checksum. should write remaining to file");
-        file.write_all(&v3[..]).await?;
-        file.flush().await?;
-      }
+      debug!("[HTTP] Downloaded {} bytes", buffer.len());
     }
-
-    debug!("[+] bytes check passed");
 
     let mut n = file_length as usize;
     let emit = self.emitter.clone();
+
     while let Some(chunk) = stream.next().await {
-      match chunk {
-        Ok(chunk) => {
-          n += file.write(&chunk).await?;
-          if let Some(emit) = &emit {
-            emit.call(
-              DownloadProgress {
-                target: "progress",
-                downloaded: n as i64,
-                total: Some(content_length as i64),
-              },
-              ThreadsafeFunctionCallMode::NonBlocking,
-            );
-          }
-        }
-        Err(e) => return Err(napi::Error::new(GenericFailure, format!("Error: {}", &e))),
+      let chunk = chunk.map_err(|e| napi::Error::from_reason(format!("{}", e)))?;
+      let bytes = chunk.as_ref().to_vec();
+      file.write_all(&bytes).await?;
+      n += bytes.len();
+
+      if let Some(emit) = &emit {
+        emit.call(
+          DownloadProgress {
+            target: "progress",
+            downloaded: n as i64,
+            total: Some(content_length as i64),
+          },
+          ThreadsafeFunctionCallMode::NonBlocking,
+        );
       }
-    }
 
-    debug!("download complete. flushing");
-    file.flush().await?;
-
-    if let Some(emit) = emit {
-      emit.call(
-        DownloadProgress {
-          target: "progress",
-          downloaded: n as i64,
-          total: Some(content_length as i64),
-        },
-        ThreadsafeFunctionCallMode::NonBlocking,
-      );
+      file.flush().await?;
     }
 
     Ok(HttpFileDownloaderResponse {
