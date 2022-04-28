@@ -1,7 +1,7 @@
 name: CI
 env:
   DEBUG: napi:*
-  APP_NAME: demofe
+  APP_NAME: dolphin-utilities-rust
   MACOSX_DEPLOYMENT_TARGET: '10.13'
 'on':
   push:
@@ -44,6 +44,7 @@ jobs:
             docker: ghcr.io/napi-rs/napi-rs/nodejs-rust:lts-alpine-zig
             build: |-
               set -e &&
+              apk add openssl-dev &&  
               rustup target add x86_64-unknown-linux-gnu &&
               yarn build --target x86_64-unknown-linux-gnu --zig --zig-abi-suffix 2.12 &&
               llvm-strip -x *.node
