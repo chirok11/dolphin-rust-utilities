@@ -54,7 +54,7 @@ async fn proxy_check_socks5h(
 ) -> Result<String> {
   debug!("connecting to {}:{}", ip, port);
 
-  let mut proxy = reqwest::Proxy::http(format!("socks5h://{}:{}", ip, port)).unwrap();
+  let mut proxy = reqwest::Proxy::all(format!("socks5h://{}:{}", ip, port)).unwrap();
 
   if let Some(u) = username {
     proxy = proxy.basic_auth(&u, &password.unwrap());
@@ -68,7 +68,7 @@ async fn proxy_check_socks5h(
     .build()
     .unwrap();
 
-  let request = client.get("http://vo4.co/ip-info").build().unwrap();
+  let request = client.get("https://vo4.co/ip-info").build().unwrap();
   let result = client.execute(request).await;
 
   match result {
@@ -89,7 +89,7 @@ async fn proxy_check_socks5(
 ) -> Result<String> {
   debug!("connecting to {}:{}", ip, port);
 
-  let mut proxy = reqwest::Proxy::http(format!("socks5://{}:{}", ip, port)).unwrap();
+  let mut proxy = reqwest::Proxy::all(format!("socks5://{}:{}", ip, port)).unwrap();
 
   if let Some(u) = username {
     proxy = proxy.basic_auth(&u, &password.unwrap());
@@ -102,7 +102,7 @@ async fn proxy_check_socks5(
     .build()
     .unwrap();
 
-  let request = client.get("http://vo4.co/ip-info").build().unwrap();
+  let request = client.get("https://vo4.co/ip-info").build().unwrap();
   let result = client.execute(request).await;
 
   match result {
