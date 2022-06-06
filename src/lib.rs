@@ -8,6 +8,7 @@ extern crate log;
 
 mod http;
 mod proxy;
+mod sqlite;
 mod zip;
 
 #[cfg(target_os = "windows")]

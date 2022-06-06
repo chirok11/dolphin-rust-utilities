@@ -16,9 +16,14 @@ export interface HttpFileDownloaderResponse {
 export function proxyCheckHttp(ip: string, port: number, username?: string | undefined | null, password?: string | undefined | null): Promise<string>
 export function proxyCheckSocks5H(ip: string, port: number, username?: string | undefined | null, password?: string | undefined | null): Promise<string>
 export function proxyCheckSocks5(ip: string, port: number, username?: string | undefined | null, password?: string | undefined | null): Promise<string>
+export interface LoginData {
+  username: string
+  password: string
+}
+export function sqliteAddLoginPassword(filepath: string, username: string, password: string): Promise<LoginData>
 export function archivateFolder(outputFile: string, inputDir: string, fileList: Array<string>): Promise<boolean>
-export function setForegroundByPid(pid: number): boolean
 export function killProcessByPid(pid: number): number
+export function setForegroundByPid(pid: number): number
 export function rustLoggerInit(): void
 export class HttpFileDownloader {
   constructor(emitter?: (...args: any[]) => any | undefined | null)

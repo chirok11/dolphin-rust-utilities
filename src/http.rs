@@ -1,21 +1,16 @@
-use bytes::{Buf, BytesMut};
-use futures_util::{StreamExt, TryStreamExt};
+use futures_util::{StreamExt};
 use napi::threadsafe_function::{
   ErrorStrategy, ThreadSafeCallContext, ThreadsafeFunction, ThreadsafeFunctionCallMode,
 };
-
 use napi::JsFunction;
-use napi::Status::GenericFailure;
-use reqwest::Request;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::fs;
-use std::io::{Cursor, Read, SeekFrom};
+use std::io::{SeekFrom};
 use std::path::PathBuf;
-use std::time::Duration;
 use tokio::fs::OpenOptions;
-use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt, BufReader, BufWriter, ReadBuf};
-use tokio::time::sleep;
+use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
+
 
 #[napi]
 struct HttpFileDownloader {
