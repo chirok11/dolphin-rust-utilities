@@ -64,6 +64,7 @@ async fn proxy_check_socks5h(
     .connect_timeout(Duration::from_secs(30))
     .proxy(proxy)
     .use_rustls_tls()
+    .danger_accept_invalid_certs(true)
     .http1_title_case_headers()
     .build()
     .unwrap();
@@ -99,6 +100,7 @@ async fn proxy_check_socks5(
     .connect_timeout(Duration::from_secs(30))
     .proxy(proxy)
     .http1_title_case_headers()
+    .danger_accept_invalid_certs(true)
     .build()
     .unwrap();
 
