@@ -27,6 +27,9 @@ pub fn window_thread_process_id(hwnd: HWND) -> (u32, u32) {
 #[napi]
 fn kill_process_by_pid(pid: u32) -> i32 {
     let h = unsafe { OpenProcess(1, 0, pid) };
+    if h.is_null() {
+        return -1;
+    }
     let result = unsafe { TerminateProcess(h, 9) };
     unsafe { CloseHandle(h) };
     result
