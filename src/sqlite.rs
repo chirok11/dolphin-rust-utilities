@@ -1,19 +1,30 @@
-use std::path::Path;
+use std::{path::Path, result, str::FromStr};
 
+use reqwest::Url;
 use rusqlite::Connection;
 
 #[napi(object)]
 #[derive(Debug)]
 pub struct LoginData {
-    pub username: String,
-    pub password: String,
+  pub username: String,
+  pub password: String,
+}
+
+#[napi(object)]
+#[derive(Debug)]
+pub struct LoginCreationParams {
+  pub username: String,
+  pub password: String,
+  // url data
+  pub url: String,
+  pub username_field: String,
+  pub password_field: String,
 }
 
 #[napi]
 async fn sqlite_add_login_password(
   filepath: String,
-  username: String,
-  password: String,
+  login_params: LoginCreationParams,
 ) -> napi::Result<LoginData> {
   let db_path = Path::new(&filepath);
   if let Err(e) = tokio::fs::metadata(db_path).await {
@@ -24,7 +35,7 @@ async fn sqlite_add_login_password(
   let connection = Connection::open(db_path);
   if let Ok(connection) = connection {
     // Before we check do we have login for coinlist.co
-    let mut query = match connection.prepare("SELECT username_value, password_value FROM logins WHERE username_element = 'user[email]' AND origin_url LIKE '%coinlist.co%' LIMIT 1") {
+    let mut query = match connection.prepare("SELECT username_value, password_value FROM logins WHERE username_element = ? AND origin_url = ? LIMIT 1") {
         Ok(query) => query,
         Err(e) => {
             error!("Error while preparing query: {}", e);
@@ -32,7 +43,7 @@ async fn sqlite_add_login_password(
         }
     };
 
-    let rows = query.query([]);
+    let rows = query.query([&login_params.username_field, &login_params.url]);
 
     match rows {
       Ok(mut rows) => {
@@ -44,45 +55,23 @@ async fn sqlite_add_login_password(
             if username_value.is_ok() && password_value.is_ok() {
               let u = username_value.unwrap();
               let p = password_value.unwrap();
-              let putf = String::from_utf8(p).map_err(|e| napi::Error::from_reason(e.to_string()))?;
+              let putf =
+                String::from_utf8(p).map_err(|e| napi::Error::from_reason(e.to_string()))?;
 
-              debug!("Found login for coinlist.co: {} {}", u, putf);
-              return if u == username && putf == password {
+              debug!("Found login for {}: {} {}", &login_params.url, u, putf);
+              return if u == login_params.username && putf == login_params.password {
                 debug!("Login matches, skipping");
                 Ok(LoginData {
-                  username,
-                  password
+                  username: login_params.username,
+                  password: login_params.password,
                 })
               } else {
-                // We have login for coinlist.co but it is not correct
-                // We need to update it
-                debug!("Login does not match, updating");
-                return Ok(
-                  LoginData {
-                    username: u,
-                    password: putf
-                  }
-                );
-                // match connection.prepare("UPDATE logins SET username_value = ?, password_value = ? WHERE username_element = 'user[email]' AND origin_url LIKE '%coinlist.co%'") {
-                //   Ok(mut statement) => {
-                //     let result = statement.execute([&username, &password]);
-                //     if result.is_err() {
-                //       let e = result.unwrap_err();
-                //       error!("Error while updating login: {}", e);
-                //       Err(napi::Error::from_reason(format!("{:?}", e)))
-                //     } else {
-                //       Ok(LoginData {
-                //         username,
-                //         password
-                //       })
-                //     }
-                //   },
-                //   Err(e) => {
-                //     error!("Error while preparing query: {}", e);
-                //     Err(napi::Error::from_reason(format!("{}", e)))
-                //   }
-                // }
-              }
+                debug!("Login does not match, will return username and password from database");
+                return Ok(LoginData {
+                  username: u,
+                  password: putf,
+                });
+              };
             }
           } else {
             // Here we should insert new one with provided login, password
@@ -110,61 +99,155 @@ async fn sqlite_add_login_password(
             skip_zero_click, \
             generation_upload_status, \
             possible_username_pairs, \
-            id, \
             date_last_used, \
             moving_blocked_for, \
             date_password_modified\
-            ) VALUES ('https://coinlist.co/login', 'https://coinlist.co/login', 'user[email]', ?, 'user[password]', ?, '', 'https://coinlist.co/', '13298985082883522', 0, 0, 0, 0, '', '', '', '',\
-             0, 0, '', 0, '13298985082883522', '', '')";
-            let mut statement = connection.prepare(query).map_err(|e| napi::Error::from_reason(e.to_string()))?;
-            let result = statement.execute([&username, &password]);
+            ) VALUES (?, ?, ?, ?, ?, ?, '', ?, '13298985082883522', 0, 0, 0, 0, '', '', '', '',\
+             0, 0, '', '13298985082883522', '', '')";
+            let url_parsed = Url::from_str(&login_params.url)
+              .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+
+            let mut statement = connection
+              .prepare(query)
+              .map_err(|e| napi::Error::from_reason(e.to_string()))?;
+            let result = statement.execute([
+              &login_params.url,
+              &login_params.url,
+              &login_params.username_field,
+              &login_params.username,
+              &login_params.password_field,
+              &login_params.password,
+              &format!(
+                "{}://{}/",
+                &url_parsed.scheme(),
+                &url_parsed.host_str().unwrap()
+              ),
+            ]);
 
             return match result {
               Ok(_len) => {
-                debug!("Inserted new login for coinlist.co: {} {}", username, password);
+                debug!(
+                  "Inserted new login for coinlist.co: {} {}",
+                  &login_params.username, &login_params.password
+                );
                 Ok(LoginData {
-                  username,
-                  password
+                  username: login_params.username,
+                  password: login_params.password,
                 })
-              },
+              }
               Err(e) => {
                 error!("Error while inserting new login: {}", e);
                 Err(napi::Error::from_reason(format!("{}", e)))
               }
-            }
+            };
           }
         } else {
-
         }
       }
       Err(e) => {
         error!("Unable to query database: {}", e);
-        return Err(napi::Error::from_reason(format!("Unable to query database: {}", e)));
+        return Err(napi::Error::from_reason(format!(
+          "Unable to query database: {}",
+          e
+        )));
       }
     }
   } else {
     let e = connection.err();
     error!("Unable to open database, error: {:?}", e);
-    return Err(napi::Error::from_reason(format!("Unable to open database, error: {:?}", e)));
+    return Err(napi::Error::from_reason(format!(
+      "Unable to open database, error: {:?}",
+      e
+    )));
   }
 
   Ok(LoginData {
-    username,
-    password
+    username: login_params.username,
+    password: login_params.password,
   })
 }
 
 #[tokio::test]
-async fn test_sqlite_add_login_password() {
+async fn test_sqlite_add_coinlist_login_password() {
   pretty_env_logger::init();
 
-  let filepath = "/home/pq/dolphin-profile/Default/Login Data";
-  let result = sqlite_add_login_password(
-    filepath.to_string(),
-    "username@paxssword.com".to_string(),
-    "abcdef123".to_string(),
-  )
-  .await;
+  let filepath = "/Users/dark/chrome-profile/Default/Login Data";
+  let params = LoginCreationParams {
+    url: "https://coinlist.co/login".into(),
+    username: "admin".into(),
+    password: "kevin123".into(),
+    username_field: "user[email]".into(),
+    password_field: "user[password]".into(),
+  };
+  let result = sqlite_add_login_password(filepath.to_string(), params).await;
+
+  println!("{:?}", result);
+}
+
+#[tokio::test]
+async fn test_sqlite_add_facebook_login_password() {
+  pretty_env_logger::init();
+
+  let filepath = "/Users/dark/chrome-profile/Default/Login Data";
+  let params = LoginCreationParams {
+    url: "https://www.facebook.com/".into(),
+    username: "test".into(),
+    password: "test".into(),
+    username_field: "email".into(),
+    password_field: "pass".into(),
+  };
+  let result = sqlite_add_login_password(filepath.to_string(), params).await;
+
+  println!("{:?}", result);
+}
+
+#[tokio::test]
+async fn test_sqlite_add_business_facebook_login_password() {
+  pretty_env_logger::init();
+
+  let filepath = "/Users/dark/chrome-profile/Default/Login Data";
+  let params = LoginCreationParams {
+    url: "https://business.facebook.com/login/".into(),
+    username: "test".into(),
+    password: "test".into(),
+    username_field: "email".into(),
+    password_field: "pass".into(),
+  };
+  let result = sqlite_add_login_password(filepath.to_string(), params).await;
+
+  println!("{:?}", result);
+}
+
+#[tokio::test]
+async fn test_sqlite_add_ads_tiktok_login_password() {
+  pretty_env_logger::init();
+
+  let filepath = "/Users/dark/chrome-profile/Default/Login Data";
+  let params = LoginCreationParams {
+    url: "https://ads.tiktok.com/i18n/login/".into(),
+    username: "test".into(),
+    password: "test".into(),
+    username_field: "email".into(),
+    password_field: "password".into(),
+  };
+  let result = sqlite_add_login_password(filepath.to_string(), params).await;
+
+  println!("{:?}", result);
+}
+
+#[tokio::test]
+async fn test_sqlite_add_google_login_password() {
+  pretty_env_logger::init();
+
+  let filepath = "/Users/dark/chrome-profile/Default/Login Data";
+  let params = LoginCreationParams {
+    url: "https://accounts.google.com/signin/v2/identifier".into(),
+    username: "abraham@gmail.com".into(),
+    password: "abcdef123".into(),
+    username_field: "identifier".into(),
+    password_field: "password".into(),
+  };
+  let result = sqlite_add_login_password(filepath.to_string(), params).await;
 
   println!("{:?}", result);
 }
