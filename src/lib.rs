@@ -20,6 +20,7 @@ mod addon_darwin;
 #[cfg(not(target_os = "windows"))]
 mod addon_unix;
 
+#[allow(unused)]
 #[napi]
 fn rust_logger_init() {
   pretty_env_logger::init();

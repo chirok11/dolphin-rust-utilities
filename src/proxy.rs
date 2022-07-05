@@ -2,6 +2,7 @@ use napi::Result;
 use reqwest::header::HeaderName;
 use std::time::Duration;
 
+#[allow(unused)]
 #[napi]
 async fn proxy_check_http(
   ip: String,
@@ -45,6 +46,7 @@ async fn proxy_check_http(
   }
 }
 
+#[allow(unused)]
 #[napi]
 async fn proxy_check_socks5h(
   ip: String,
@@ -81,6 +83,7 @@ async fn proxy_check_socks5h(
   }
 }
 
+#[allow(unused)]
 #[napi]
 async fn proxy_check_socks5(
   ip: String,

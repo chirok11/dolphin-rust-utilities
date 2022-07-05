@@ -1,4 +1,4 @@
-use std::{path::Path, result, str::FromStr};
+use std::{path::Path, str::FromStr};
 
 use reqwest::Url;
 use rusqlite::Connection;

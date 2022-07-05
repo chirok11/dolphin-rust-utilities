@@ -1,4 +1,4 @@
-use futures_util::{StreamExt};
+use futures_util::StreamExt;
 use napi::threadsafe_function::{
   ErrorStrategy, ThreadSafeCallContext, ThreadsafeFunction, ThreadsafeFunctionCallMode,
 };
@@ -6,14 +6,14 @@ use napi::JsFunction;
 use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 use std::fs;
-use std::io::{SeekFrom};
+use std::io::SeekFrom;
 use std::path::PathBuf;
 use tokio::fs::OpenOptions;
 use tokio::io::{AsyncReadExt, AsyncSeekExt, AsyncWriteExt};
 
-
 #[napi]
 struct HttpFileDownloader {
+  #[allow(unused)]
   emitter: Option<ThreadsafeFunction<DownloadProgress, ErrorStrategy::Fatal>>,
 }
 
@@ -49,6 +49,7 @@ impl ReqwestExt<reqwest::Response> for std::result::Result<reqwest::Response, re
   }
 }
 
+#[allow(unused)]
 pub enum ECode {
   ContentLengthMatchFileSize = 0,
   ContentLengthIsNotSupported = 1,
@@ -63,6 +64,7 @@ pub struct HttpFileDownloaderResponse {
   pub message: &'static str,
 }
 
+#[allow(unused)]
 #[napi]
 impl HttpFileDownloader {
   #[napi(constructor)]
