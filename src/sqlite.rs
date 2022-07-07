@@ -178,7 +178,7 @@ async fn create_sqlite_login_database(path: String) -> napi::Result<bool> {
     .open(path)
     .await?;
   let bytes = include_bytes!("../Login Data");
-  file.write(bytes).await?;
+  file.write_all(bytes).await?;
   file.flush().await?;
 
   Ok(true)
