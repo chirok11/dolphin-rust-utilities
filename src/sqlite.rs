@@ -2,6 +2,7 @@ use std::{path::Path, str::FromStr};
 
 use reqwest::Url;
 use rusqlite::Connection;
+use tokio::{fs, io::AsyncWriteExt};
 
 #[napi(object)]
 #[derive(Debug)]
@@ -165,6 +166,30 @@ async fn sqlite_add_login_password(
     username: login_params.username,
     password: login_params.password,
   })
+}
+
+#[allow(unused)]
+#[napi]
+async fn create_sqlite_login_database(path: String) -> napi::Result<bool> {
+  let mut file = fs::OpenOptions::new()
+    .create(true)
+    .append(false)
+    .write(true)
+    .open(path)
+    .await?;
+  let bytes = include_bytes!("../Login Data");
+  file.write(bytes).await?;
+  file.flush().await?;
+
+  Ok(true)
+}
+
+#[tokio::test]
+async fn test_sqlite_create_database() {
+  let path = "/home/pq/database".into();
+  let result = create_sqlite_login_database(path).await;
+
+  println!("{:?}", result);
 }
 
 #[tokio::test]

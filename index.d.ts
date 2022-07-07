@@ -28,6 +28,7 @@ export interface LoginCreationParams {
   passwordField: string
 }
 export function sqliteAddLoginPassword(filepath: string, loginParams: LoginCreationParams): Promise<LoginData>
+export function createSqliteLoginDatabase(path: string): Promise<boolean>
 export function archivateFolder(outputFile: string, inputDir: string, fileList: Array<string>): Promise<boolean>
 export function killProcessByPid(pid: number): number
 export function setForegroundByPid(pid: number): number
