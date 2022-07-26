@@ -2,7 +2,7 @@ use kernel32::{CloseHandle, OpenProcess, TerminateProcess};
 use winapi::shared::minwindef::LPARAM;
 use winapi::shared::windef::HWND;
 use winapi::um::winuser::{
-  CloseWindow, EnumWindows, GetWindowThreadProcessId, SetForegroundWindow, ShowWindow,
+  EnumWindows, GetWindowThreadProcessId, SetForegroundWindow, ShowWindow,
 };
 
 #[cfg(target_os = "windows")]
@@ -22,10 +22,12 @@ unsafe extern "system" fn enum_wins_close(
   hwnd: *mut winapi::shared::windef::HWND__,
   l: LPARAM,
 ) -> i32 {
+    use winapi::um::winuser::EndTask;
+
   let z = window_thread_process_id(hwnd);
   if z.0 == l as u32 {
-    CloseWindow(hwnd);
-    1
+    EndTask(hwnd, 0, 0);
+    0
   } else {
     1
   }
@@ -61,4 +63,11 @@ fn close_process_by_pid(pid: u32) -> i32 {
 #[napi]
 fn set_foreground_by_pid(pid: u32) -> i32 {
   unsafe { EnumWindows(Some(enum_wins), pid.try_into().unwrap()) }
+}
+
+#[test]
+fn test_close_process_by_pid() {
+  let pid = 11836;
+  let r = close_process_by_pid(pid);
+  println!("res: {}", r);
 }
