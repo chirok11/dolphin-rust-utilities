@@ -25,6 +25,7 @@ unsafe extern "system" fn enum_wins_close(
   let z = window_thread_process_id(hwnd);
   if z.0 == l as u32 {
     CloseWindow(hwnd);
+    1
   } else {
     1
   }
@@ -61,4 +62,3 @@ fn close_process_by_pid(pid: u32) -> i32 {
 fn set_foreground_by_pid(pid: u32) -> i32 {
   unsafe { EnumWindows(Some(enum_wins), pid.try_into().unwrap()) }
 }
-
